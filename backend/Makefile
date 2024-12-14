@@ -5,9 +5,9 @@ DB_USERNAME=root
 DB_PASSWORD=secret
 
 NETWORK_NAME=ticket-network
-MIGRATION_PATH=db/migrations
+MIGRATION_PATH=db/migration
 
-.PHONY: postgres createdb dropdb migrateup migratedown test server
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server
 
 network:
 	docket network create -d bridge $(NETWORK_NAME)
@@ -26,6 +26,9 @@ migrateup:
 
 migratedown:
 	migrate -path $(MIGRATION_PATH) -database $(DB_CONNECTION_STRING) -verbose down
+
+sqlc:
+	sqlc generate
 
 test:
 	go test -v -cover ./...
