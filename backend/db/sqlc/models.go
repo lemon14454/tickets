@@ -7,6 +7,7 @@ package db
 import (
 	"database/sql/driver"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -57,11 +58,11 @@ func (ns NullEventStatus) Value() (driver.Value, error) {
 }
 
 type Event struct {
-	ID        int64            `json:"id"`
-	HostID    int64            `json:"host_id"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
-	Status    EventStatus      `json:"status"`
+	ID        int64       `json:"id"`
+	HostID    int64       `json:"host_id"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+	Status    EventStatus `json:"status"`
 }
 
 type EventZone struct {
@@ -72,29 +73,29 @@ type EventZone struct {
 }
 
 type Order struct {
-	ID         int64            `json:"id"`
-	UserID     pgtype.Int8      `json:"user_id"`
-	CreatedAt  pgtype.Timestamp `json:"created_at"`
-	TotalPrice int32            `json:"total_price"`
+	ID         int64       `json:"id"`
+	UserID     pgtype.Int8 `json:"user_id"`
+	CreatedAt  time.Time   `json:"created_at"`
+	TotalPrice int32       `json:"total_price"`
 }
 
 type Ticket struct {
-	ID        int64            `json:"id"`
-	UserID    pgtype.Int8      `json:"user_id"`
-	OrderID   pgtype.Int8      `json:"order_id"`
-	EventID   int64            `json:"event_id"`
-	ZoneID    int64            `json:"zone_id"`
-	Row       int32            `json:"row"`
-	Seat      int32            `json:"seat"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        int64       `json:"id"`
+	UserID    pgtype.Int8 `json:"user_id"`
+	OrderID   pgtype.Int8 `json:"order_id"`
+	EventID   int64       `json:"event_id"`
+	ZoneID    int64       `json:"zone_id"`
+	Row       int32       `json:"row"`
+	Seat      int32       `json:"seat"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
 type User struct {
-	ID             int64            `json:"id"`
-	Username       string           `json:"username"`
-	Email          string           `json:"email"`
-	HashedPassword string           `json:"hashed_password"`
-	Host           bool             `json:"host"`
-	CreatedAt      pgtype.Timestamp `json:"created_at"`
+	ID             int64     `json:"id"`
+	Username       string    `json:"username"`
+	Email          string    `json:"email"`
+	HashedPassword string    `json:"hashed_password"`
+	Host           bool      `json:"host"`
+	CreatedAt      time.Time `json:"created_at"`
 }

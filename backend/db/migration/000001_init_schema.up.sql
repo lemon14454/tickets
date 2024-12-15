@@ -9,8 +9,8 @@ CREATE TYPE "event_status" AS ENUM (
 CREATE TABLE "events" (
   "id" bigserial PRIMARY KEY,
   "host_id" bigint NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (now()),
-  "updated_at" timestamp NOT NULL DEFAULT (now()),
+  "created_at" timestamptz NOT NULL DEFAULT (now()),
+  "updated_at" timestamptz NOT NULL DEFAULT (now()),
   "status" event_status NOT NULL DEFAULT 'processing'
 );
 
@@ -20,7 +20,7 @@ CREATE TABLE "users" (
   "email" varchar(50) NOT NULL,
   "hashed_password" varchar(255) NOT NULL,
   "host" bool NOT NULL DEFAULT false,
-  "created_at" timestamp NOT NULL DEFAULT (now())
+  "created_at" timestamptz NOT NULL DEFAULT (now())
 );
 
 CREATE TABLE "tickets" (
@@ -31,8 +31,8 @@ CREATE TABLE "tickets" (
   "zone_id" bigint NOT NULL,
   "row" int NOT NULL,
   "seat" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (now()),
-  "updated_at" timestamp NOT NULL DEFAULT (now()),
+  "created_at" timestamptz NOT NULL DEFAULT (now()),
+  "updated_at" timestamptz NOT NULL DEFAULT (now()),
   UNIQUE(event_id, zone_id, row, seat)
 );
 
@@ -46,7 +46,7 @@ CREATE TABLE "event_zones" (
 CREATE TABLE "orders" (
   "id" bigserial PRIMARY KEY,
   "user_id" bigint,
-  "created_at" timestamp NOT NULL DEFAULT (now()),
+  "created_at" timestamptz NOT NULL DEFAULT (now()),
   "total_price" int NOT NULL
 );
 
