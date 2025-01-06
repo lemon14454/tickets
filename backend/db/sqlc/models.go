@@ -59,6 +59,7 @@ func (ns NullEventStatus) Value() (driver.Value, error) {
 
 type Event struct {
 	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
 	HostID    int64       `json:"host_id"`
 	CreatedAt time.Time   `json:"created_at"`
 	UpdatedAt time.Time   `json:"updated_at"`
@@ -69,6 +70,8 @@ type EventZone struct {
 	ID      int64  `json:"id"`
 	Zone    string `json:"zone"`
 	EventID int64  `json:"event_id"`
+	Rows    int32  `json:"rows"`
+	Seats   int32  `json:"seats"`
 	Price   int32  `json:"price"`
 }
 

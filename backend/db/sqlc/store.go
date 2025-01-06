@@ -9,6 +9,7 @@ import (
 
 type Store interface {
 	Querier
+	ExecTx(ctx context.Context, fn func(*Queries) error) error
 }
 
 type SQLStore struct {
@@ -23,7 +24,7 @@ func NewStore(db *pgx.Conn) Store {
 	}
 }
 
-func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *SQLStore) ExecTx(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := store.db.Begin(ctx)
 	if err != nil {
 		return err
