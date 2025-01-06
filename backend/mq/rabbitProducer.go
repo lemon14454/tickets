@@ -2,21 +2,19 @@ package mq
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type MQProducer interface {
-	Publish(message []byte)
-}
-
 type RabbitProducer struct {
-	conn *amqp.Connection
-	ch   *amqp.Channel
+	Conn   *amqp.Connection
+	Ch     *amqp.Channel
+	queues map[string]*amqp.Queue
 }
 
-func NewRabbitProducer(address string) (MQProducer, error) {
+func NewRabbitProducer(address string) (*RabbitProducer, error) {
 	conn, err := amqp.Dial(address)
 	if err != nil {
 		return nil, err
@@ -28,40 +26,39 @@ func NewRabbitProducer(address string) (MQProducer, error) {
 	}
 
 	producer := &RabbitProducer{
-		conn: conn,
-		ch:   ch,
+		Conn:   conn,
+		Ch:     ch,
+		queues: make(map[string]*amqp.Queue),
 	}
 
 	return producer, nil
 }
 
-func (producer *RabbitProducer) CreateQueue() (*amqp.Queue, error) {
-	q, err := producer.ch.QueueDeclare(
-		"hello", // name
-		true,    // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
+func (producer *RabbitProducer) DeclareQueue(name string) error {
+	q, err := producer.Ch.QueueDeclare(
+		name,  // name
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
 
-	return &q, err
+	producer.queues[name] = &q
+	return err
 }
 
-func (producer *RabbitProducer) Publish(message []byte) {
-	q, err := producer.ch.QueueDeclare(
-		"hello", // name
-		true,    // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
-	)
+func (producer *RabbitProducer) Publish(queue string, message []byte) (err error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err = producer.ch.PublishWithContext(ctx,
+	q, ok := producer.queues[queue]
+	if !ok {
+		return fmt.Errorf("Queue Name: %v not found", queue)
+	}
+
+	err = producer.Ch.PublishWithContext(ctx,
 		"",
 		q.Name,
 		false,
@@ -72,4 +69,11 @@ func (producer *RabbitProducer) Publish(message []byte) {
 			Body:         message,
 		},
 	)
+
+	return err
+}
+
+func (producer *RabbitProducer) Close() {
+	producer.Conn.Close()
+	producer.Ch.Close()
 }

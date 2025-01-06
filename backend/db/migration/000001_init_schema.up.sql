@@ -8,6 +8,7 @@ CREATE TYPE "event_status" AS ENUM (
 
 CREATE TABLE "events" (
   "id" bigserial PRIMARY KEY,
+  "name" varchar(20) NOT NULL,
   "host_id" bigint NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now()),
@@ -40,6 +41,8 @@ CREATE TABLE "event_zones" (
   "id" bigserial PRIMARY KEY,
   "zone" varchar(10) NOT NULL,
   "event_id" bigint NOT NULL,
+  "rows" int NOT NULL,
+  "seats" int NOT NULL,
   "price" int NOT NULL DEFAULT 1000
 );
 

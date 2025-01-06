@@ -9,8 +9,11 @@ import (
 )
 
 type Querier interface {
+	CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error)
+	CreateEventZone(ctx context.Context, arg CreateEventZoneParams) (EventZone, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	GetUser(ctx context.Context, email string) (User, error)
+	GetUserByID(ctx context.Context, id int64) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)
