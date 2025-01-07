@@ -11,12 +11,15 @@ import (
 type Querier interface {
 	CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error)
 	CreateEventZone(ctx context.Context, arg CreateEventZoneParams) (EventZone, error)
+	CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	GetEventByID(ctx context.Context, id int64) (GetEventByIDRow, error)
 	GetEventZones(ctx context.Context, eventID int64) ([]EventZone, error)
 	GetRowTickets(ctx context.Context, arg GetRowTicketsParams) ([]Ticket, error)
+	GetTicketsForUpdate(ctx context.Context, dollar_1 []int64) ([]GetTicketsForUpdateRow, error)
 	GetUser(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
+	UpdateTicketsUser(ctx context.Context, arg UpdateTicketsUserParams) error
 }
 
 var _ Querier = (*Queries)(nil)

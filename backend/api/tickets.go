@@ -53,7 +53,7 @@ func (server *Server) claimTicket(ctx *gin.Context) {
 	// This Filter could be done by SQL
 	availableTickets := make([]interface{}, 0)
 	for _, ticket := range tickets {
-		if !ticket.UserID.Valid && !ticket.OrderID.Valid {
+		if ticket.UserID == nil && ticket.OrderID == nil {
 			availableTickets = append(availableTickets, ticket.ID)
 		}
 	}
