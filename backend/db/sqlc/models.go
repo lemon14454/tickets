@@ -59,6 +59,7 @@ type Event struct {
 	ID        int64       `json:"id"`
 	Name      string      `json:"name"`
 	HostID    int64       `json:"host_id"`
+	StartAt   time.Time   `json:"start_at"`
 	CreatedAt time.Time   `json:"created_at"`
 	UpdatedAt time.Time   `json:"updated_at"`
 	Status    EventStatus `json:"status"`

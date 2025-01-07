@@ -1,14 +1,15 @@
 -- name: CreateEvent :one
 INSERT INTO events (
     host_id,
+    start_at,
     name
 ) VALUES (
-    $1, $2
+    $1, $2, $3
 )
 RETURNING *;
 
 -- name: GetEventByID :one
-select name, status from events
+select name, status, start_at from events
 where id = $1 limit 1;
 
 -- name: CreateEventZone :one

@@ -7,30 +7,34 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
 const createEvent = `-- name: CreateEvent :one
 INSERT INTO events (
     host_id,
+    start_at,
     name
 ) VALUES (
-    $1, $2
+    $1, $2, $3
 )
-RETURNING id, name, host_id, created_at, updated_at, status
+RETURNING id, name, host_id, start_at, created_at, updated_at, status
 `
 
 type CreateEventParams struct {
-	HostID int64  `json:"host_id"`
-	Name   string `json:"name"`
+	HostID  int64     `json:"host_id"`
+	StartAt time.Time `json:"start_at"`
+	Name    string    `json:"name"`
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error) {
-	row := q.db.QueryRow(ctx, createEvent, arg.HostID, arg.Name)
+	row := q.db.QueryRow(ctx, createEvent, arg.HostID, arg.StartAt, arg.Name)
 	var i Event
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.HostID,
+		&i.StartAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Status,
@@ -80,19 +84,20 @@ func (q *Queries) CreateEventZone(ctx context.Context, arg CreateEventZoneParams
 }
 
 const getEventByID = `-- name: GetEventByID :one
-select name, status from events
+select name, status, start_at from events
 where id = $1 limit 1
 `
 
 type GetEventByIDRow struct {
-	Name   string      `json:"name"`
-	Status EventStatus `json:"status"`
+	Name    string      `json:"name"`
+	Status  EventStatus `json:"status"`
+	StartAt time.Time   `json:"start_at"`
 }
 
 func (q *Queries) GetEventByID(ctx context.Context, id int64) (GetEventByIDRow, error) {
 	row := q.db.QueryRow(ctx, getEventByID, id)
 	var i GetEventByIDRow
-	err := row.Scan(&i.Name, &i.Status)
+	err := row.Scan(&i.Name, &i.Status, &i.StartAt)
 	return i, err
 }
 

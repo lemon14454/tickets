@@ -10,6 +10,7 @@ CREATE TABLE "events" (
   "id" bigserial PRIMARY KEY,
   "name" varchar(20) NOT NULL,
   "host_id" bigint NOT NULL,
+  "start_at" timestamptz NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT (now()),
   "status" event_status NOT NULL DEFAULT 'processing'
