@@ -13,7 +13,6 @@ import (
 var queueName = "tickets"
 
 type createEventRequest struct {
-	HostID    int64       `json:"host_id" binding:"required,min=1"`
 	Name      string      `json:"name" binding:"required"`
 	EventZone []eventZone `json:"event_zone" binding:"dive"`
 }
@@ -45,7 +44,7 @@ func (server *Server) createEvent(ctx *gin.Context) {
 
 	payload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
-	user, err := server.store.GetUserByID(ctx, req.HostID)
+	user, err := server.store.GetUserByID(ctx, payload.UserID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -56,7 +55,7 @@ func (server *Server) createEvent(ctx *gin.Context) {
 		return
 	}
 
-	if payload.Username != user.Username {
+	if payload.UserID != user.ID {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

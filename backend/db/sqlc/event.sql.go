@@ -78,3 +78,52 @@ func (q *Queries) CreateEventZone(ctx context.Context, arg CreateEventZoneParams
 	)
 	return i, err
 }
+
+const getEventByID = `-- name: GetEventByID :one
+select name, status from events
+where id = $1 limit 1
+`
+
+type GetEventByIDRow struct {
+	Name   string      `json:"name"`
+	Status EventStatus `json:"status"`
+}
+
+func (q *Queries) GetEventByID(ctx context.Context, id int64) (GetEventByIDRow, error) {
+	row := q.db.QueryRow(ctx, getEventByID, id)
+	var i GetEventByIDRow
+	err := row.Scan(&i.Name, &i.Status)
+	return i, err
+}
+
+const getEventZones = `-- name: GetEventZones :many
+select id, zone, event_id, rows, seats, price from event_zones
+where event_id = $1
+`
+
+func (q *Queries) GetEventZones(ctx context.Context, eventID int64) ([]EventZone, error) {
+	rows, err := q.db.Query(ctx, getEventZones, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EventZone{}
+	for rows.Next() {
+		var i EventZone
+		if err := rows.Scan(
+			&i.ID,
+			&i.Zone,
+			&i.EventID,
+			&i.Rows,
+			&i.Seats,
+			&i.Price,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

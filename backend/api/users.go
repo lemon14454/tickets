@@ -95,13 +95,13 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, accessPayload, err := server.tokenMaker.CreateToken(user.Username, server.config.ACCESS_TOKEN_DURATION)
+	accessToken, accessPayload, err := server.tokenMaker.CreateToken(user.ID, server.config.ACCESS_TOKEN_DURATION)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.Username, server.config.REFRESH_TOKEN_DURATION)
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(user.ID, server.config.REFRESH_TOKEN_DURATION)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
