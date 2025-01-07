@@ -49,6 +49,7 @@ CREATE TABLE "event_zones" (
 CREATE TABLE "orders" (
   "id" bigserial PRIMARY KEY,
   "user_id" bigint,
+  "event_id" bigint NOT NULL,
   "created_at" timestamptz NOT NULL DEFAULT (now()),
   "total_price" int NOT NULL
 );
@@ -60,3 +61,4 @@ ALTER TABLE "tickets" ADD FOREIGN KEY ("event_id") REFERENCES "events" ("id");
 ALTER TABLE "tickets" ADD FOREIGN KEY ("zone_id") REFERENCES "event_zones" ("id");
 ALTER TABLE "event_zones" ADD FOREIGN KEY ("event_id") REFERENCES "events" ("id");
 ALTER TABLE "orders" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "orders" ADD FOREIGN KEY ("event_id") REFERENCES "events" ("id");

@@ -51,3 +51,77 @@ func (q *Queries) GetRowTickets(ctx context.Context, arg GetRowTicketsParams) ([
 	}
 	return items, nil
 }
+
+const getTicketsForUpdate = `-- name: GetTicketsForUpdate :many
+SELECT
+    tickets.id,
+    tickets.user_id,
+    tickets.order_id,
+    tickets.event_id,
+    event_zones.zone,
+    tickets.row,
+    tickets.seat,
+    event_zones.price
+FROM tickets 
+JOIN event_zones on tickets.zone_id = event_zones.id
+WHERE tickets.id = ANY($1::bigint[])
+AND tickets.user_id IS NULL
+AND tickets.order_id IS NULL
+FOR UPDATE
+`
+
+type GetTicketsForUpdateRow struct {
+	ID      int64  `json:"id"`
+	UserID  *int64 `json:"user_id"`
+	OrderID *int64 `json:"order_id"`
+	EventID int64  `json:"event_id"`
+	Zone    string `json:"zone"`
+	Row     int32  `json:"row"`
+	Seat    int32  `json:"seat"`
+	Price   int32  `json:"price"`
+}
+
+func (q *Queries) GetTicketsForUpdate(ctx context.Context, dollar_1 []int64) ([]GetTicketsForUpdateRow, error) {
+	rows, err := q.db.Query(ctx, getTicketsForUpdate, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetTicketsForUpdateRow{}
+	for rows.Next() {
+		var i GetTicketsForUpdateRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.OrderID,
+			&i.EventID,
+			&i.Zone,
+			&i.Row,
+			&i.Seat,
+			&i.Price,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateTicketsUser = `-- name: UpdateTicketsUser :exec
+UPDATE tickets SET user_id = $1, order_id = $2
+WHERE id = ANY($3::bigint[])
+`
+
+type UpdateTicketsUserParams struct {
+	UserID  *int64  `json:"user_id"`
+	OrderID *int64  `json:"order_id"`
+	ID      []int64 `json:"id"`
+}
+
+func (q *Queries) UpdateTicketsUser(ctx context.Context, arg UpdateTicketsUserParams) error {
+	_, err := q.db.Exec(ctx, updateTicketsUser, arg.UserID, arg.OrderID, arg.ID)
+	return err
+}

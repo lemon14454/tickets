@@ -63,6 +63,7 @@ func (server *Server) setupRouter() {
 	authRoutes := router.Group("/").Use(AuthMiddleware(server.tokenMaker))
 	authRoutes.POST("/event", server.createEvent)
 	authRoutes.POST("/ticket", server.claimTicket)
+	authRoutes.POST("/order", server.createOrder)
 	authRoutes.GET("/auth", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, struct{}{})
 	})

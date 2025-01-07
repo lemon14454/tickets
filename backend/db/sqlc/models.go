@@ -8,8 +8,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type EventStatus string
@@ -76,22 +74,23 @@ type EventZone struct {
 }
 
 type Order struct {
-	ID         int64       `json:"id"`
-	UserID     pgtype.Int8 `json:"user_id"`
-	CreatedAt  time.Time   `json:"created_at"`
-	TotalPrice int32       `json:"total_price"`
+	ID         int64     `json:"id"`
+	UserID     *int64    `json:"user_id"`
+	EventID    int64     `json:"event_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	TotalPrice int32     `json:"total_price"`
 }
 
 type Ticket struct {
-	ID        int64       `json:"id"`
-	UserID    pgtype.Int8 `json:"user_id"`
-	OrderID   pgtype.Int8 `json:"order_id"`
-	EventID   int64       `json:"event_id"`
-	ZoneID    int64       `json:"zone_id"`
-	Row       int32       `json:"row"`
-	Seat      int32       `json:"seat"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	ID        int64     `json:"id"`
+	UserID    *int64    `json:"user_id"`
+	OrderID   *int64    `json:"order_id"`
+	EventID   int64     `json:"event_id"`
+	ZoneID    int64     `json:"zone_id"`
+	Row       int32     `json:"row"`
+	Seat      int32     `json:"seat"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type User struct {
