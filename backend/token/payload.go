@@ -12,18 +12,18 @@ var ErrInvalidToken = errors.New("token is invalid")
 var ErrExpiredToken = errors.New("token has expired")
 
 type Payload struct {
-	Username string `json:"username"`
+	UserID int64 `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
-func NewPayload(username string, duration time.Duration) (*Payload, error) {
+func NewPayload(userID int64, duration time.Duration) (*Payload, error) {
 	tokenID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
 	}
 
 	payload := &Payload{
-		username,
+		userID,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

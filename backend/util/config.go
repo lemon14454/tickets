@@ -11,6 +11,8 @@ type Config struct {
 	DB_SOURCE              string        `mapstructure:"DB_SOURCE"`
 	MIGRATION_URL          string        `mapstructure:"MIGRATION_URL"`
 	HTTP_SERVER_ADDRESS    string        `mapstructure:"HTTP_SERVER_ADDRESS"`
+	BROKER_ADDRESS         string        `mapstructure:"BROKER_ADDRESS"`
+	REDIS_ADDRESS          string        `mapstructure:"REDIS_ADDRESS"`
 	TOKEN_SYMMETRIC_KEY    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	ACCESS_TOKEN_DURATION  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	REFRESH_TOKEN_DURATION time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`

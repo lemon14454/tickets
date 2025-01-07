@@ -33,7 +33,7 @@ func (server *Server) renewToken(ctx *gin.Context) {
 	// check Payload content
 
 	accessToken, accessPayload, err := server.tokenMaker.CreateToken(
-		refreshPayload.Username,
+		refreshPayload.UserID,
 		server.config.ACCESS_TOKEN_DURATION,
 	)
 	if err != nil {

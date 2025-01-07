@@ -7,6 +7,10 @@ INSERT INTO events (
 )
 RETURNING *;
 
+-- name: GetEventByID :one
+select name, status from events
+where id = $1 limit 1;
+
 -- name: CreateEventZone :one
 INSERT INTO event_zones (
     zone,
@@ -18,3 +22,7 @@ INSERT INTO event_zones (
     $1, $2, $3, $4, $5
 )
 RETURNING *;
+
+-- name: GetEventZones :many
+select * from event_zones
+where event_id = $1;
