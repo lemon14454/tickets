@@ -115,9 +115,31 @@ func (server *Server) createEvent(ctx *gin.Context) {
 }
 
 func (server *Server) listEvent(ctx *gin.Context) {
+	events, err := server.store.GetAllEvent(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 
+	ctx.JSON(http.StatusOK, events)
+}
+
+type listEventZoneRequest struct {
+	EventID int64 `uri:"id" binding:"required,min=1"`
 }
 
 func (server *Server) listEventZone(ctx *gin.Context) {
+	var req listEventZoneRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 
+	zones, err := server.store.GetEventZone(ctx, req.EventID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, zones)
 }

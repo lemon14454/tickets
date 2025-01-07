@@ -8,9 +8,20 @@ INSERT INTO events (
 )
 RETURNING *;
 
+-- name: GetHostEvent :many
+SELECT id, name, status, start_at, updated_at, created_at FROM events
+WHERE host_id = $1;
+
+-- name: GetAllEvent :many
+SELECT id, name, status, start_at FROM events;
+
 -- name: GetEventByID :one
-select name, status, start_at from events
-where id = $1 limit 1;
+SELECT name, status, start_at FROM events
+WHERE id = $1 limit 1;
+
+-- name: GetEventZone :many
+SELECT zone, rows, seats, price FROM event_zones
+WHERE event_id = $1;
 
 -- name: CreateEventZone :one
 INSERT INTO event_zones (
@@ -25,5 +36,5 @@ INSERT INTO event_zones (
 RETURNING *;
 
 -- name: GetEventZones :many
-select * from event_zones
-where event_id = $1;
+SELECT * FROM event_zones
+WHERE event_id = $1;

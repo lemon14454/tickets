@@ -83,9 +83,45 @@ func (q *Queries) CreateEventZone(ctx context.Context, arg CreateEventZoneParams
 	return i, err
 }
 
+const getAllEvent = `-- name: GetAllEvent :many
+SELECT id, name, status, start_at FROM events
+`
+
+type GetAllEventRow struct {
+	ID      int64       `json:"id"`
+	Name    string      `json:"name"`
+	Status  EventStatus `json:"status"`
+	StartAt time.Time   `json:"start_at"`
+}
+
+func (q *Queries) GetAllEvent(ctx context.Context) ([]GetAllEventRow, error) {
+	rows, err := q.db.Query(ctx, getAllEvent)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetAllEventRow{}
+	for rows.Next() {
+		var i GetAllEventRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Status,
+			&i.StartAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getEventByID = `-- name: GetEventByID :one
-select name, status, start_at from events
-where id = $1 limit 1
+SELECT name, status, start_at FROM events
+WHERE id = $1 limit 1
 `
 
 type GetEventByIDRow struct {
@@ -101,9 +137,46 @@ func (q *Queries) GetEventByID(ctx context.Context, id int64) (GetEventByIDRow, 
 	return i, err
 }
 
+const getEventZone = `-- name: GetEventZone :many
+SELECT zone, rows, seats, price FROM event_zones
+WHERE event_id = $1
+`
+
+type GetEventZoneRow struct {
+	Zone  string `json:"zone"`
+	Rows  int32  `json:"rows"`
+	Seats int32  `json:"seats"`
+	Price int32  `json:"price"`
+}
+
+func (q *Queries) GetEventZone(ctx context.Context, eventID int64) ([]GetEventZoneRow, error) {
+	rows, err := q.db.Query(ctx, getEventZone, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetEventZoneRow{}
+	for rows.Next() {
+		var i GetEventZoneRow
+		if err := rows.Scan(
+			&i.Zone,
+			&i.Rows,
+			&i.Seats,
+			&i.Price,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getEventZones = `-- name: GetEventZones :many
-select id, zone, event_id, rows, seats, price from event_zones
-where event_id = $1
+SELECT id, zone, event_id, rows, seats, price FROM event_zones
+WHERE event_id = $1
 `
 
 func (q *Queries) GetEventZones(ctx context.Context, eventID int64) ([]EventZone, error) {
@@ -122,6 +195,47 @@ func (q *Queries) GetEventZones(ctx context.Context, eventID int64) ([]EventZone
 			&i.Rows,
 			&i.Seats,
 			&i.Price,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getHostEvent = `-- name: GetHostEvent :many
+SELECT id, name, status, start_at, updated_at, created_at FROM events
+WHERE host_id = $1
+`
+
+type GetHostEventRow struct {
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	Status    EventStatus `json:"status"`
+	StartAt   time.Time   `json:"start_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
+func (q *Queries) GetHostEvent(ctx context.Context, hostID int64) ([]GetHostEventRow, error) {
+	rows, err := q.db.Query(ctx, getHostEvent, hostID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetHostEventRow{}
+	for rows.Next() {
+		var i GetHostEventRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Status,
+			&i.StartAt,
+			&i.UpdatedAt,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

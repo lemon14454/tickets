@@ -9,6 +9,49 @@ import (
 	"context"
 )
 
+const getOrderDetail = `-- name: GetOrderDetail :many
+SELECT
+    event_zones.zone,
+    tickets.row,
+    tickets.seat,
+    event_zones.price
+FROM tickets 
+JOIN event_zones on tickets.zone_id = event_zones.id
+WHERE tickets.order_id = $1
+`
+
+type GetOrderDetailRow struct {
+	Zone  string `json:"zone"`
+	Row   int32  `json:"row"`
+	Seat  int32  `json:"seat"`
+	Price int32  `json:"price"`
+}
+
+func (q *Queries) GetOrderDetail(ctx context.Context, orderID *int64) ([]GetOrderDetailRow, error) {
+	rows, err := q.db.Query(ctx, getOrderDetail, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetOrderDetailRow{}
+	for rows.Next() {
+		var i GetOrderDetailRow
+		if err := rows.Scan(
+			&i.Zone,
+			&i.Row,
+			&i.Seat,
+			&i.Price,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRowTickets = `-- name: GetRowTickets :many
 SELECT id, user_id, order_id, event_id, zone_id, row, seat, created_at, updated_at FROM tickets
 WHERE event_id = $1

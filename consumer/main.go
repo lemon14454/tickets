@@ -8,6 +8,7 @@ import (
 	"ticket/consumer/model"
 	rbmq "ticket/consumer/mq"
 	"ticket/consumer/util"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -54,7 +55,7 @@ func main() {
 				log.Printf("Failed to deserialize: %v \n", err)
 			}
 
-			log.Printf("Received a message: %v", msg)
+			log.Printf("Received Event ID: %v", msg)
 
 			var evt model.Event
 			result := db.First(&evt, msg.EventID)
@@ -85,7 +86,17 @@ func main() {
 				}
 			}
 
-			db.Create(&tickets)
+			err = db.Transaction(func(tx *gorm.DB) error {
+				if err := db.Create(&tickets).Error; err != nil {
+					return err
+				}
+
+				if err := db.Model(&evt).Update("status", model.EventStatusCreated).Update("updated_at", time.Now()).Error; err != nil {
+					return err
+				}
+
+				return nil
+			})
 
 			d.Ack(false)
 		}
@@ -95,4 +106,3 @@ func main() {
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
 }
-

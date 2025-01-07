@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
 const createOrder = `-- name: CreateOrder :one
@@ -37,4 +38,53 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 		&i.TotalPrice,
 	)
 	return i, err
+}
+
+const getUserOrders = `-- name: GetUserOrders :many
+SELECT 
+    orders.id,
+    orders.event_id,
+    orders.created_at,
+    orders.total_price,
+    events.name,
+    events.start_at
+FROM orders
+JOIN events ON orders.event_id = events.id
+WHERE orders.user_id = $1
+`
+
+type GetUserOrdersRow struct {
+	ID         int64     `json:"id"`
+	EventID    int64     `json:"event_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	TotalPrice int32     `json:"total_price"`
+	Name       string    `json:"name"`
+	StartAt    time.Time `json:"start_at"`
+}
+
+func (q *Queries) GetUserOrders(ctx context.Context, userID *int64) ([]GetUserOrdersRow, error) {
+	rows, err := q.db.Query(ctx, getUserOrders, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserOrdersRow{}
+	for rows.Next() {
+		var i GetUserOrdersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventID,
+			&i.CreatedAt,
+			&i.TotalPrice,
+			&i.Name,
+			&i.StartAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
