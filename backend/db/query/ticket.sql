@@ -24,3 +24,13 @@ WHERE tickets.id = ANY($1::bigint[])
 AND tickets.user_id IS NULL
 AND tickets.order_id IS NULL
 FOR UPDATE;
+
+-- name: GetOrderDetail :many
+SELECT
+    event_zones.zone,
+    tickets.row,
+    tickets.seat,
+    event_zones.price
+FROM tickets 
+JOIN event_zones on tickets.zone_id = event_zones.id
+WHERE tickets.order_id = $1;

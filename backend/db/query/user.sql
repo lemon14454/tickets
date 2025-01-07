@@ -10,9 +10,9 @@ INSERT INTO users (
 RETURNING *;
 
 -- name: GetUser :one
-select * from users
-where email = $1 limit 1;
+SELECT * FROM users
+WHERE email = $1 LIMIT 1;
 
 -- name: GetUserByID :one
-select * from users
-where id = $1 limit 1;
+SELECT * FROM users
+WHERE id = $1 LIMIT 1;

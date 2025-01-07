@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-	"net/http"
 	"ticket/backend/cache"
 	db "ticket/backend/db/sqlc"
 	rbmq "ticket/backend/mq"
@@ -60,13 +58,16 @@ func (server *Server) setupRouter() {
 	router.POST("/users/login", server.loginUser)
 	router.POST("/tokens/renew", server.renewToken)
 
+	router.GET("/event", server.listEvent)
+	router.GET("/event/:id", server.listEventZone)
+
 	authRoutes := router.Group("/").Use(AuthMiddleware(server.tokenMaker))
 	authRoutes.POST("/event", server.createEvent)
 	authRoutes.POST("/ticket", server.claimTicket)
+
 	authRoutes.POST("/order", server.createOrder)
-	authRoutes.GET("/auth", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, struct{}{})
-	})
+	authRoutes.GET("/order", server.listOrder)
+	authRoutes.GET("/order/:id", server.orderDetail)
 
 	server.router = router
 }
@@ -76,7 +77,6 @@ func (server *Server) Start(address string) error {
 }
 
 func (server *Server) Close() {
-	fmt.Println("TRIGGER")
 	server.mq.Close()
 }
 

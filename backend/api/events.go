@@ -6,6 +6,7 @@ import (
 	"net/http"
 	db "ticket/backend/db/sqlc"
 	"ticket/backend/token"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,6 +15,7 @@ var queueName = "tickets"
 
 type createEventRequest struct {
 	Name      string      `json:"name" binding:"required"`
+	StartAt   string      `json:"start_at" binding:"required"`
 	EventZone []eventZone `json:"event_zone" binding:"dive"`
 }
 
@@ -41,6 +43,11 @@ func (server *Server) createEvent(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
+	startTime, err := time.Parse(time.RFC3339, req.StartAt)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 
 	payload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
@@ -63,8 +70,9 @@ func (server *Server) createEvent(ctx *gin.Context) {
 	var event db.Event
 	server.store.ExecTx(ctx, func(q *db.Queries) error {
 		event, err = server.store.CreateEvent(ctx, db.CreateEventParams{
-			HostID: user.ID,
-			Name:   req.Name,
+			HostID:  user.ID,
+			StartAt: startTime,
+			Name:    req.Name,
 		})
 
 		if err != nil {
@@ -104,4 +112,34 @@ func (server *Server) createEvent(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, event)
+}
+
+func (server *Server) listEvent(ctx *gin.Context) {
+	events, err := server.store.GetAllEvent(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, events)
+}
+
+type listEventZoneRequest struct {
+	EventID int64 `uri:"id" binding:"required,min=1"`
+}
+
+func (server *Server) listEventZone(ctx *gin.Context) {
+	var req listEventZoneRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	zones, err := server.store.GetEventZone(ctx, req.EventID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, zones)
 }

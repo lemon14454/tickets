@@ -23,7 +23,7 @@ type orderDetail struct {
 	Price int32  `json:"price"`
 }
 
-type createOrderResponse struct {
+type orderResponse struct {
 	Order  db.Order      `json:"order"`
 	Detail []orderDetail `json:"ticekts"`
 }
@@ -113,8 +113,47 @@ func (server *Server) createOrder(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, createOrderResponse{
+	ctx.JSON(http.StatusOK, orderResponse{
 		Order:  order,
 		Detail: details,
 	})
+}
+
+type listOrderResponse struct {
+	Orders []db.GetUserOrdersRow `json:"order"`
+}
+
+func (server *Server) listOrder(ctx *gin.Context) {
+
+	payload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	orders, err := server.store.GetUserOrders(ctx, &payload.UserID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, orders)
+}
+
+type getOrderDetail struct {
+	OrderID int64 `uri:"id" binding:"required,min=1"`
+}
+
+func (server *Server) orderDetail(ctx *gin.Context) {
+
+	var req getOrderDetail
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	detail, err := server.store.GetOrderDetail(ctx, &req.OrderID)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, detail)
 }

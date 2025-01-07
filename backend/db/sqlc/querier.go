@@ -13,12 +13,17 @@ type Querier interface {
 	CreateEventZone(ctx context.Context, arg CreateEventZoneParams) (EventZone, error)
 	CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	GetAllEvent(ctx context.Context) ([]GetAllEventRow, error)
 	GetEventByID(ctx context.Context, id int64) (GetEventByIDRow, error)
+	GetEventZone(ctx context.Context, eventID int64) ([]GetEventZoneRow, error)
 	GetEventZones(ctx context.Context, eventID int64) ([]EventZone, error)
+	GetHostEvent(ctx context.Context, hostID int64) ([]GetHostEventRow, error)
+	GetOrderDetail(ctx context.Context, orderID *int64) ([]GetOrderDetailRow, error)
 	GetRowTickets(ctx context.Context, arg GetRowTicketsParams) ([]Ticket, error)
 	GetTicketsForUpdate(ctx context.Context, dollar_1 []int64) ([]GetTicketsForUpdateRow, error)
 	GetUser(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
+	GetUserOrders(ctx context.Context, userID *int64) ([]GetUserOrdersRow, error)
 	UpdateTicketsUser(ctx context.Context, arg UpdateTicketsUserParams) error
 }
 
