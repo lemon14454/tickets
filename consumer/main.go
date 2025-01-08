@@ -14,8 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var queueName = "tickets"
-
 func deserialize(b []byte) (model.Message, error) {
 	var msg model.Message
 	buf := bytes.NewBuffer(b)
@@ -38,12 +36,17 @@ func main() {
 		log.Fatalf("Failed to create server: %v \n", err)
 	}
 
-	err = mq.DeclareQueue(queueName)
+	err = mq.DeclareQueue(rbmq.TicketQueue)
 	if err != nil {
 		log.Fatalf("Failed to declare queue: %v \n", err)
 	}
 
-	msgs, err := mq.Consume(queueName)
+	err = mq.QueueBind(rbmq.TicketQueue, "", rbmq.TicketExchange)
+	if err != nil {
+		log.Fatalf("Failed to declare queue: %v \n", err)
+	}
+
+	msgs, err := mq.Consume(rbmq.TicketQueue)
 	if err != nil {
 		log.Fatalf("Failed to consume: %v \n", err)
 	}

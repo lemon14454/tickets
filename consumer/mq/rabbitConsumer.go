@@ -6,6 +6,10 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+var TicketExchange = "tickets"
+var TicketQueue = ""
+var DirectRouting = "direct"
+
 type RabbitConsumer struct {
 	Conn   *amqp.Connection
 	Ch     *amqp.Channel
@@ -23,17 +27,31 @@ func NewRabbitConsumer(address string) (*RabbitConsumer, error) {
 		return nil, err
 	}
 
-	producer := &RabbitConsumer{
+	consumer := &RabbitConsumer{
 		Conn:   conn,
 		Ch:     ch,
 		queues: make(map[string]*amqp.Queue),
 	}
 
-	return producer, nil
+	return consumer, nil
 }
 
-func (producer *RabbitConsumer) DeclareQueue(name string) error {
-	q, err := producer.Ch.QueueDeclare(
+func (consumer *RabbitConsumer) DeclareExchange(name, exchangeType string) error {
+	err := consumer.Ch.ExchangeDeclare(
+		name,         // name
+		exchangeType, // type
+		true,         // durable
+		false,        // auto-deleted
+		false,        // internal
+		false,        // no-wait
+		nil,          // arguments
+	)
+
+	return err
+}
+
+func (consumer *RabbitConsumer) DeclareQueue(name string) error {
+	q, err := consumer.Ch.QueueDeclare(
 		name,  // name
 		true,  // durable
 		false, // delete when unused
@@ -42,24 +60,41 @@ func (producer *RabbitConsumer) DeclareQueue(name string) error {
 		nil,   // arguments
 	)
 
-	err = producer.Ch.Qos(
+	err = consumer.Ch.Qos(
 		1,
 		0,
 		false,
 	)
 
-	producer.queues[name] = &q
+	consumer.queues[name] = &q
 	return err
 }
 
-func (producer *RabbitConsumer) Consume(queue string) (<-chan amqp.Delivery, error) {
+func (consumer *RabbitConsumer) QueueBind(name, routingKey, exchange string) error {
+	q, ok := consumer.queues[name]
+	if !ok {
+		return fmt.Errorf("Queue %s not exists", name)
+	}
 
-	q, ok := producer.queues[queue]
+	err := consumer.Ch.QueueBind(
+		q.Name,     // queue name
+		routingKey, // routing key
+		exchange,   // exchange
+		false,
+		nil,
+	)
+
+	return err
+}
+
+func (consumer *RabbitConsumer) Consume(queue string) (<-chan amqp.Delivery, error) {
+
+	q, ok := consumer.queues[queue]
 	if !ok {
 		return make(chan amqp.Delivery), fmt.Errorf("Queue Name: %v not found", queue)
 	}
 
-	msgs, err := producer.Ch.Consume(
+	msgs, err := consumer.Ch.Consume(
 		q.Name,
 		"",    // consumer
 		false, // auto-ack

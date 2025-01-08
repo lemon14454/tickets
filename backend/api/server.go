@@ -31,7 +31,8 @@ func NewServer(config *util.Config, store db.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = mq.DeclareQueue("tickets")
+
+	err = mq.DeclareExchange(rbmq.TicketExchange, rbmq.DirectRouting)
 	if err != nil {
 		return nil, err
 	}

@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 	db "ticket/backend/db/sqlc"
+	rbmq "ticket/backend/mq"
 	"ticket/backend/token"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
-
-var queueName = "tickets"
 
 type createEventRequest struct {
 	Name      string      `json:"name" binding:"required"`
@@ -105,7 +104,7 @@ func (server *Server) createEvent(ctx *gin.Context) {
 		return
 	}
 
-	err = server.mq.Publish(queueName, msg)
+	err = server.mq.Publish(rbmq.TicketExchange, "", msg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
