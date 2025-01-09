@@ -2,17 +2,18 @@ package mq
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-var TicketExchange = "tickets"
 var DirectRouting = "direct"
 
 type RabbitProducer struct {
-	Conn *amqp.Connection
-	Ch   *amqp.Channel
+	Conn   *amqp.Connection
+	Ch     *amqp.Channel
+	queues map[string]*amqp.Queue
 }
 
 func NewRabbitProducer(address string) (*RabbitProducer, error) {
@@ -27,8 +28,9 @@ func NewRabbitProducer(address string) (*RabbitProducer, error) {
 	}
 
 	producer := &RabbitProducer{
-		Conn: conn,
-		Ch:   ch,
+		Conn:   conn,
+		Ch:     ch,
+		queues: make(map[string]*amqp.Queue),
 	}
 
 	return producer, nil
@@ -43,6 +45,37 @@ func (producer *RabbitProducer) DeclareExchange(name, exchangeType string) error
 		false,        // internal
 		false,        // no-wait
 		nil,          // arguments
+	)
+
+	return err
+}
+
+func (producer *RabbitProducer) DeclareQueue(name string, args amqp.Table) error {
+	q, err := producer.Ch.QueueDeclare(
+		name,  // name
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		args,  // arguments
+	)
+
+	producer.queues[name] = &q
+	return err
+}
+
+func (producer *RabbitProducer) QueueBind(name, exchange, routingKey string) error {
+	q, ok := producer.queues[name]
+	if !ok {
+		return fmt.Errorf("Queue %s not exists", name)
+	}
+
+	err := producer.Ch.QueueBind(
+		q.Name,     // queue name
+		routingKey, // routing key
+		exchange,   // exchange
+		false,
+		nil,
 	)
 
 	return err

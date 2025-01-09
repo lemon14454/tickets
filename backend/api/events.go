@@ -5,11 +5,16 @@ import (
 	"encoding/json"
 	"net/http"
 	db "ticket/backend/db/sqlc"
-	rbmq "ticket/backend/mq"
 	"ticket/backend/token"
 	"time"
 
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	TicketQueue      = "ticket_queue"
+	TicketExchange   = "ticket_exchange"
+	TicketRoutingKey = "ticket_routing_key"
 )
 
 type createEventRequest struct {
@@ -95,7 +100,6 @@ func (server *Server) createEvent(ctx *gin.Context) {
 		return nil
 	})
 
-	// TODO: Considering about MQ Publish Failed
 	msg, err := serialize(Message{
 		EventID: event.ID,
 	})
@@ -104,7 +108,7 @@ func (server *Server) createEvent(ctx *gin.Context) {
 		return
 	}
 
-	err = server.mq.Publish(rbmq.TicketExchange, "", msg)
+	err = server.mq.Publish(TicketExchange, TicketRoutingKey, msg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
