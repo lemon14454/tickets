@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Store interface {
@@ -14,10 +14,10 @@ type Store interface {
 
 type SQLStore struct {
 	*Queries
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewStore(db *pgx.Conn) Store {
+func NewStore(db *pgxpool.Pool) Store {
 	return &SQLStore{
 		db:      db,
 		Queries: New(db),

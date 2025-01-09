@@ -26,3 +26,28 @@ func NewClient(ip string, port int) *Client {
 		},
 	}
 }
+
+func (client *Client) Login(username, password string) error {
+	res, err := client.Request.LoginUser(username, password)
+
+	if err != nil {
+		return err
+	}
+
+	client.Request.AccessToken = &res.AccessToken
+	client.Request.RefreshToken = &res.RefreshToken
+
+	return nil
+}
+
+func (client *Client) Register(username, password string) error {
+
+	mail := fmt.Sprintf("%s@mail.com", username)
+	_, err := client.Request.RegisterUser(username, mail, password)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -121,7 +121,7 @@ func (handler *Handler) sendBackToEventQueue(d amqp091.Delivery) error {
 	if ok {
 		retryCount = count.(int32)
 	}
-	log.Printf("Receive Retry Count: %v:", retryCount)
+	log.Printf("Receive Retry Count: %v", retryCount)
 
 	if retryCount > maxRetryConut {
 		return fmt.Errorf("Max event create retry exceeded")
