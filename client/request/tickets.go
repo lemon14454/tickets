@@ -18,7 +18,7 @@ type claimTicketResponse struct {
 }
 
 func (client *Client) ClaimTicket(eventID, zoneID int64, row int32, quantity int) (*claimTicketResponse, error) {
-	res, err := MakeRequest[claimTicketResponse](client, http.MethodPost, "tokens/renew", claimTicketRequest{
+	res, err := MakeRequest[claimTicketResponse](client, http.MethodPost, "ticket", claimTicketRequest{
 		EventID:  eventID,
 		ZoneID:   zoneID,
 		Row:      row,

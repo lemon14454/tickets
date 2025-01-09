@@ -142,7 +142,7 @@ func (server *Server) listEventZone(ctx *gin.Context) {
 		return
 	}
 
-	zones, err := server.store.GetEventZone(ctx, req.EventID)
+	zones, err := server.store.GetEventZones(ctx, req.EventID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

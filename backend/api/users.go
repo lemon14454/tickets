@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	db "ticket/backend/db/sqlc"
 	"ticket/backend/util"
@@ -54,6 +55,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	user, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
+		fmt.Println(err)
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

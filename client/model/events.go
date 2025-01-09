@@ -28,3 +28,12 @@ type EventZone struct {
 	Seats int32  `json:"seats"`
 	Price int32  `json:"price"`
 }
+
+type EventZoneDetail struct {
+	ID      int64  `json:"id"`
+	Zone    string `json:"zone"`
+	EventID int64  `json:"event_id"`
+	Rows    int32  `json:"rows"`
+	Seats   int32  `json:"seats"`
+	Price   int32  `json:"price"`
+}

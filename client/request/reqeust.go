@@ -53,13 +53,13 @@ func MakeRequest[T any](client *Client, method, endpoint string, body interface{
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("unexpected status code %d, %s", resp.StatusCode, string(responseBody))
 	}
 
 	var result T

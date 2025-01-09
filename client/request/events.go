@@ -1,6 +1,7 @@
 package request
 
 import (
+	"fmt"
 	"net/http"
 	"ticket/client/model"
 	"time"
@@ -32,4 +33,14 @@ func (client *Client) CreateEvent(name string, eventZone []model.EventZone) (*mo
 		EventZone: eventZone,
 	}, nil)
 	return event, err
+}
+
+type listEventZoneRequest struct {
+	EventID int64 `uri:"id" binding:"required,min=1"`
+}
+
+func (client *Client) GetEventZoneByID(eventID int64) (*[]model.EventZoneDetail, error) {
+	url := fmt.Sprintf("event/%d", eventID)
+	eventZones, err := MakeRequest[[]model.EventZoneDetail](client, http.MethodGet, url, nil, nil)
+	return eventZones, err
 }

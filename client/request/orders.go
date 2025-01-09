@@ -6,7 +6,7 @@ import (
 )
 
 type createOrderRequest struct {
-	ClaimedTickets []int64 `json:"claimed_tickets" binding:"required"`
+	ClaimedTickets []int64 `json:"claimed_tickets"`
 }
 
 type orderDetail struct {
@@ -22,7 +22,7 @@ type orderResponse struct {
 }
 
 func (client *Client) CreateOrder(ticketsID []int64) (*orderResponse, error) {
-	res, err := MakeRequest[orderResponse](client, http.MethodPost, "ticket", createOrderRequest{
+	res, err := MakeRequest[orderResponse](client, http.MethodPost, "order", createOrderRequest{
 		ClaimedTickets: ticketsID,
 	}, nil)
 
