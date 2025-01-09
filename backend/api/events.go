@@ -11,7 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var queueName = "tickets"
+var (
+	TicketQueue      = "ticket_queue"
+	TicketExchange   = "ticket_exchange"
+	TicketRoutingKey = "ticket_routing_key"
+)
 
 type createEventRequest struct {
 	Name      string      `json:"name" binding:"required"`
@@ -96,7 +100,6 @@ func (server *Server) createEvent(ctx *gin.Context) {
 		return nil
 	})
 
-	// TODO: Considering about MQ Publish Failed
 	msg, err := serialize(Message{
 		EventID: event.ID,
 	})
@@ -105,7 +108,7 @@ func (server *Server) createEvent(ctx *gin.Context) {
 		return
 	}
 
-	err = server.mq.Publish(queueName, msg)
+	err = server.mq.Publish(TicketExchange, TicketRoutingKey, msg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

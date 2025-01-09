@@ -4,10 +4,13 @@ DB_NAME=ticket
 DB_USERNAME=root
 DB_PASSWORD=secret
 
-.PHONY: test server
+.PHONY: test build server
 
 test:
 	go test -v -cover ./...
 
+build:
+	go build -o server main.go handler.go
+
 server:
-	go run main.go
+	server

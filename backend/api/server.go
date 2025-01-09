@@ -8,8 +8,11 @@ import (
 	"ticket/backend/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 )
+
+var WaitExchange = "wait_exchange"
 
 type Server struct {
 	config     *util.Config
@@ -31,7 +34,23 @@ func NewServer(config *util.Config, store db.Store) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = mq.DeclareQueue("tickets")
+
+	err = mq.DeclareExchange(TicketExchange, rbmq.DirectRouting)
+	if err != nil {
+		return nil, err
+	}
+
+	err = mq.DeclareExchange(WaitExchange, rbmq.DirectRouting)
+	if err != nil {
+		return nil, err
+	}
+
+	err = mq.DeclareQueue(TicketQueue, amqp091.Table{})
+	if err != nil {
+		return nil, err
+	}
+
+	err = mq.QueueBind(TicketQueue, TicketExchange, TicketRoutingKey)
 	if err != nil {
 		return nil, err
 	}
