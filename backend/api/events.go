@@ -72,7 +72,7 @@ func (server *Server) createEvent(ctx *gin.Context) {
 	}
 
 	var event db.Event
-	server.store.ExecTx(ctx, func(q *db.Queries) error {
+	err = server.store.ExecTx(ctx, func(q *db.Queries) error {
 		event, err = server.store.CreateEvent(ctx, db.CreateEventParams{
 			HostID:  user.ID,
 			StartAt: startTime,
@@ -99,6 +99,10 @@ func (server *Server) createEvent(ctx *gin.Context) {
 
 		return nil
 	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 
 	msg, err := serialize(Message{
 		EventID: event.ID,
