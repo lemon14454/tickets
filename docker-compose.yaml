@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=ticket
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+  redis:
+    image: redis:7.4.2-alpine
+  mq:
+    image: rabbitmq:4.0.4-alpine
+  api:
+    build:
+      context: ./backend/.
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_SOURCE=postgresql://root:secret@postgres:5432/ticket?sslmode=disable
+      - BROKER_ADDRESS=amqp://guest:guest@mq:5672/
+      - REDIS_ADDRESS=redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_started
+      mq:
+        condition: service_started
+    command: [ "/app/main" ]
+  consumer:
+    build:
+      context: ./consumer/.
+      dockerfile: Dockerfile
+    environment:
+      - DB_SOURCE=postgresql://root:secret@postgres:5432/ticket?sslmode=disable
+      - BROKER_ADDRESS=amqp://guest:guest@mq:5672/
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+      mq:
+        condition: service_started
+    command: [ "/app/main" ]
+

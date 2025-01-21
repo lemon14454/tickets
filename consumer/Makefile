@@ -13,4 +13,4 @@ build:
 	go build -o server main.go handler.go
 
 server:
-	server
+	./server
