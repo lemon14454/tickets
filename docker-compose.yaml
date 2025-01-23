@@ -19,8 +19,6 @@ services:
     build:
       context: ./backend/.
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
     environment:
       - DB_SOURCE=postgresql://root:secret@postgres:5432/ticket?sslmode=disable
       - BROKER_ADDRESS=amqp://guest:guest@mq:5672/
@@ -48,4 +46,13 @@ services:
       mq:
         condition: service_started
     command: [ "/app/main" ]
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 8080:8080
+    depends_on:
+      api:
+        condition: service_started
 

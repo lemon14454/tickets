@@ -19,6 +19,7 @@ var username string
 var password string
 var zoneString string // ex: A,5,5|B,5,5|C,5,5
 var attemptUser int
+var sameUser bool
 
 // e.g.
 // ./client -ip 127.0.0.1 -port	8080 -user user@mail.com -password 12345678
@@ -36,6 +37,8 @@ func init() {
 
 	flag.StringVar(&zoneString, "zone", "A,10,10|B,10,10|C,10,10", "zone string [zone/rows/seats|zone/rows/seats ...]")
 	flag.IntVar(&attemptUser, "attempt", 100, "attempt [default 100 times]")
+
+	flag.BoolVar(&sameUser, "same_user", false, "use same user [default false]")
 }
 
 func authUser(client *Client, user, pwd string) error {
@@ -133,7 +136,13 @@ func simulate(detail []model.EventZoneDetail) {
 		go func() {
 			defer wg.Done()
 			client := NewClient(serverIP, serverPort)
-			testuser := fmt.Sprintf("testuser%d", i)
+
+			simulateUserID := i
+			if sameUser {
+				simulateUserID = 0
+			}
+
+			testuser := fmt.Sprintf("testuser%d", simulateUserID)
 			err := authUser(client, testuser, password)
 			if err != nil {
 				failed++

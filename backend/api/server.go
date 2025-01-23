@@ -80,7 +80,7 @@ func (server *Server) setupRouter() {
 	router.GET("/event", server.listEvent)
 	router.GET("/event/:id", server.listEventZone)
 
-	authRoutes := router.Group("/").Use(AuthMiddleware(server.tokenMaker))
+	authRoutes := router.Group("/").Use(AuthMiddleware(server.tokenMaker), RateLimitMiddleware(server.cache))
 	authRoutes.POST("/event", server.createEvent)
 	authRoutes.POST("/ticket", server.claimTicket)
 

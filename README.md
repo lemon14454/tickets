@@ -9,44 +9,23 @@
 - [x] RabbitMQ consumer with Ticket Creation (Insert available tickets to table)
 - [x] RabbitMQ Dead Letter Exchange for failed message
 - [x] Ticket Buying Massive request Simulation script (Client)
-- [ ] Setting up kubernetes for backend cluster and load balancing
-- [ ] CDC pipeline to notify user in queue for available ticket
+- [x] Setup Nginx Rate Limit and application layer load balance middleware
+- [ ] Component Cluster to prevent single point of failure
 
-### User Case
+### User Story
 
 - 建立活動 -> 劃分座位區域及數量 -> 建立對應門票
 - 選擇活動 -> 選擇座位區域及數量 -> 保留門票 -> 建立訂單或是超時釋放門票
 
 ### How to Start
 
-Create Required Container
 ```
-cd backend
-make postgres
-make redis
-make mq
+docker compose up -d
 ```
 
-Setting up DB
-```
-cd backend
-make createdb
-make migrateup
-make sqlc
-```
+Client
 
-Build and Run
 ```
-// Backend
-cd backend
-make server
-
-// Consumer
-cd consumer
-make build
-make server
-
-// Client
 cd client
 make build
 make client // or execute it manually ./client -attempt 1000
@@ -54,8 +33,22 @@ make client // or execute it manually ./client -attempt 1000
 
 ### System Design & Database Schema
 
-![system](./images/TicketSystem.png)
+![system](./images/System.png)
 ![system](./images/TicketV1.png)
+
+
+### Rate Limit
+
+```nginx.conf
+limit_req zone=reqlimit burst=20 nodelay;
+```
+
+第一層先使用 Nginx 對單一 IP 做流量限制，
+加上 burst 和 nodelay 來達成 Token Bucket (leaky bucket) 的效果
+
+第二層在需要 Auth 的 API 加上 Token Bucket rate limit middleware
+透過 Redis Transaction (WATCH MULTI EXEC) 來預防相同使用者有多個併發請求的情況
+
 
 ### 使用 Redis 完成購票流程
 
