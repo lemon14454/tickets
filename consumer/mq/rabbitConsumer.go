@@ -129,7 +129,7 @@ func (producer *RabbitConsumer) Publish(exchange, routingKey string, message []b
 	return err
 }
 
-func (consumer *RabbitConsumer) CreateWaitQueue(delay int, waitQueue string, waitKey string, exchange string, routingKey string) error {
+func (consumer *RabbitConsumer) CreateWaitQueue(delay int32, waitQueue string, waitKey string, exchange string, routingKey string) error {
 
 	err := consumer.DeclareQueue(waitQueue, amqp.Table{
 		"x-dead-letter-exchange":    exchange,

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"ticket/client/model"
 	"time"
 )
@@ -15,51 +16,29 @@ var zoneStringInvalidErr = fmt.Errorf("provided zone string isn't valid")
 
 var serverIP string
 var serverPort int
-var username string
-var password string
+
+var username string = "testuser0"
+var password string = "12345678"
+
+var action string
 var zoneString string // ex: A,5,5|B,5,5|C,5,5
-var attemptUser int
+var attempts int
+var eventID int
 var sameUser bool
 
-// e.g.
-// ./client -ip 127.0.0.1 -port	8080 -user user@mail.com -password 12345678
-
-// 1. Shell Script generate multiple user
-// 2. Create Event with CLI
-// 3. Simulate Massive ticket buying request with CLI
+// Check Makefile for usage
 
 func init() {
 	flag.StringVar(&serverIP, "ip", "127.0.0.1", "server ip [default:127.0.0.1]")
 	flag.IntVar(&serverPort, "port", 8080, "server port [default:8080]")
 
-	flag.StringVar(&username, "user", "", "username [auto register if not exists]")
-	flag.StringVar(&password, "pwd", "", "password [atleast 8 characters]")
+	flag.StringVar(&action, "action", "simulate", "event | user | simulate")
 
 	flag.StringVar(&zoneString, "zone", "A,10,10|B,10,10|C,10,10", "zone string [zone/rows/seats|zone/rows/seats ...]")
-	flag.IntVar(&attemptUser, "attempt", 100, "attempt [default 100 times]")
-
+	flag.IntVar(&attempts, "attempt", 100, "attempt [default 100 times]")
+	flag.IntVar(&eventID, "event_id", 1, "eventID [default 1]")
 	flag.BoolVar(&sameUser, "same_user", false, "use same user [default false]")
-}
 
-func authUser(client *Client, user, pwd string) error {
-	err := client.Login(user, pwd)
-
-	if err != nil {
-		// User Probably not created
-		err := client.Register(user, pwd)
-		if err != nil {
-			return err
-		}
-
-		// Retry
-		err = client.Login(user, pwd)
-		if err != nil {
-			return err
-		}
-	}
-
-	// fmt.Println("User Successfully Logged In")
-	return nil
 }
 
 func parseZoneString() ([]model.EventZone, error) {
@@ -93,110 +72,187 @@ func parseZoneString() ([]model.EventZone, error) {
 	return zones, nil
 }
 
-func create() (*model.Event, *[]model.EventZoneDetail, error) {
-	client := NewClient(serverIP, serverPort)
+func createEvent() (*model.Event, error) {
 
-	err := authUser(client, username, password)
+	client := NewClient(serverIP, serverPort)
+	err := client.Login(username, password)
+
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	name := fmt.Sprintf("Event-%s", time.Now().String())
 
 	zones, err := parseZoneString()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	event, err := client.Request.CreateEvent(name, zones)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	detail, err := client.Request.GetEventZoneByID(event.ID)
-
-	return event, detail, err
+	return event, err
 }
 
-func simulate(detail []model.EventZoneDetail) {
+func createUser() {
 
-	if len(detail) == 0 {
+	client := NewClient(serverIP, serverPort)
+	const totalUsers = 5000
+	const userPerSecond = 100
+	var wg sync.WaitGroup
+
+	for i := 0; i < totalUsers; i += userPerSecond {
+		start := time.Now()
+
+		for j := 0; j < userPerSecond && i+j < totalUsers; j++ {
+			wg.Add(1)
+			go func(id int) {
+				defer wg.Done()
+
+				testuser := fmt.Sprintf("testuser%d", id)
+				err := client.Register(testuser, password)
+
+				if err != nil {
+					fmt.Printf("Create User %d Failed with %v \n", id, err)
+				}
+
+			}(i + j)
+		}
+
+		wg.Wait()
+		elapsed := time.Since(start)
+		if elapsed < time.Second {
+			time.Sleep(time.Second - elapsed)
+		}
+	}
+
+}
+
+func simulate() {
+
+	client := NewClient(serverIP, serverPort)
+	detail, err := client.Request.GetEventZoneByID(int64(eventID))
+	if err != nil {
+		fmt.Printf("Can't Find Event ID: %v \n", eventID)
+		return
+	}
+
+	detailLength := len(detail)
+
+	if detailLength == 0 {
 		fmt.Println("No zone detect, skip simulation")
 		return
 	}
 
+	if sameUser {
+		err := client.Login(username, password)
+		if err != nil {
+			fmt.Printf("Auth Error: %v \n", err)
+			return
+		}
+	}
+
 	var wg sync.WaitGroup
-	success, failed := 0, 0
+	var success int32
+	var failed int32
+	var requestErr int32
 
 	seed := time.Now().UnixNano()
 	source := rand.NewSource(seed)
 	r := rand.New(source)
 
-	for i := 0; i < attemptUser; i++ {
+	for i := 0; i < attempts; i++ {
 		wg.Add(1)
-		go func() {
+
+		go func(dummy *Client, id int) {
 			defer wg.Done()
-			client := NewClient(serverIP, serverPort)
 
-			simulateUserID := i
-			if sameUser {
-				simulateUserID = 0
+			if !sameUser {
+				dummy = NewClient(serverIP, serverPort)
+				testuser := fmt.Sprintf("testuser%d", id)
+				err := dummy.Login(testuser, password)
+
+				if err != nil {
+					atomic.AddInt32(&requestErr, 1)
+					// fmt.Printf("Auth Error: %v \n", err)
+					return
+				} else {
+					time.Sleep(1 * time.Millisecond)
+				}
 			}
 
-			testuser := fmt.Sprintf("testuser%d", simulateUserID)
-			err := authUser(client, testuser, password)
-			if err != nil {
-				failed++
-				fmt.Printf("Auth Error: %v \n", err)
-				return
-			}
-			zone := detail[r.Intn(len(detail))]
+			zone := detail[r.Intn(detailLength)]
 			row := r.Int31n(zone.Rows) + 1
 			quantity := r.Intn(4) + 1
-			res, err := client.Request.ClaimTicket(zone.EventID, zone.ID, row, quantity)
+			res, err := dummy.Request.ClaimTicket(zone.EventID, zone.ID, row, quantity, sameUser)
 
 			if err != nil {
-				failed++
-				fmt.Printf("Cliam Ticket Error: %v \n", err)
+				atomic.AddInt32(&requestErr, 1)
+				// fmt.Printf("Cliam Ticket Error: %v \n", err)
 				return
 			}
 
 			noTicketsClaimed := len(res.ClaimedTickets) == 0
 			if noTicketsClaimed {
-				failed++
+				atomic.AddInt32(&failed, 1)
 				// fmt.Printf("No Tickets Claimed \n")
 				return
 			}
 
-			_, err = client.Request.CreateOrder(res.ClaimedTickets)
+			time.Sleep(1 * time.Millisecond)
+
+			_, err = dummy.Request.CreateOrder(res.ClaimedTickets, int64(eventID), sameUser)
 			if err != nil {
-				failed++
+				atomic.AddInt32(&requestErr, 1)
 				fmt.Printf("Create Order Error: %v \n", err)
-				fmt.Printf("Input: %v %v %v %v \n", zone.EventID, zone.ID, row, quantity)
+				fmt.Printf("Claimed Tickets: %v \n", res.ClaimedTickets)
 				return
 			}
 
-			success++
-		}()
+			atomic.AddInt32(&success, 1)
+		}(client, i)
+
+		time.Sleep(1 * time.Millisecond)
 	}
 
 	wg.Wait()
-	fmt.Printf("[Result] Success: %d, Failed: %d \n", success, failed)
+
+	fmt.Println()
+	fmt.Println("----- [Simulation Result] -----")
+	fmt.Printf("Get Ticket: %d \n", success)
+	fmt.Printf("Didn't get Ticket: %d \n", failed)
+	fmt.Printf("HTTP request error: %d \n", requestErr)
+	fmt.Printf("Total request: %d \n", success+failed+requestErr)
 }
 
 func main() {
 	flag.Parse()
 
-	// Create Event
-	fmt.Println("Start Event Creation")
-	event, detail, err := create()
-	if err != nil {
-		fmt.Printf("Create Event Failed: %v \n", err)
+	if action == "event" {
+		fmt.Println("Start Event Creation")
+		event, err := createEvent()
+		if err != nil {
+			fmt.Printf("Create Event Failed: %v \n", err)
+			return
+		}
+		fmt.Printf("Event Create Success: %v \n", event)
 		return
 	}
-	fmt.Printf("Event Create Success: %v \n", event)
 
-	// Simulate Buying Ticket
-	fmt.Println("Start Ticket Buying Simulation")
-	simulate(*detail)
-	fmt.Println("Simulation Complete")
+	if action == "user" {
+		fmt.Println("Start TestUser Creation")
+		createUser()
+		fmt.Println("TestUser Creation End")
+		return
+	}
+
+	if action == "simulate" {
+		// Simulate Buying Ticket
+		fmt.Printf("Start Ticket Buying Simulation, Event: %d \n", eventID)
+		fmt.Printf("Using Same User: %v \n", sameUser)
+		simulate()
+		fmt.Println("Simulation Complete")
+	}
+
 }

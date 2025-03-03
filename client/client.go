@@ -15,7 +15,16 @@ type Client struct {
 
 func NewClient(ip string, port int) *Client {
 	url := fmt.Sprintf("http://%s:%d", ip, port)
-	httpClient := &http.Client{Timeout: 10 * time.Second}
+
+	tr := &http.Transport{
+		ResponseHeaderTimeout: time.Hour,
+		MaxConnsPerHost:   99999,
+		DisableKeepAlives: true,
+	}
+
+	httpClient := &http.Client{
+		Transport: tr,
+	}
 
 	return &Client{
 		serverIP:   ip,

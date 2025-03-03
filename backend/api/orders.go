@@ -7,6 +7,7 @@ import (
 	"strconv"
 	db "ticket/backend/db/sqlc"
 	"ticket/backend/token"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -14,6 +15,7 @@ import (
 
 type createOrderRequest struct {
 	ClaimedTickets []int64 `json:"claimed_tickets" binding:"required"`
+	EventID        int64   `json:"event_id" binding:"required,min=1"`
 }
 
 type orderDetail struct {
@@ -43,9 +45,11 @@ func (server *Server) createOrder(ctx *gin.Context) {
 		return
 	}
 
+	ticketsToDeleteFromCache := make([]string, len(req.ClaimedTickets))
 	// Check if userID match the ticket's claim
 	for _, ticketID := range req.ClaimedTickets {
-		key := fmt.Sprintf("ticket:%d", ticketID)
+		key := fmt.Sprintf("ticket:%d-%d", req.EventID, ticketID)
+		ticketsToDeleteFromCache = append(ticketsToDeleteFromCache, key)
 		userID, err := server.cache.Get(ctx, key).Result()
 		if errors.Is(err, redis.Nil) {
 			ctx.JSON(http.StatusUnauthorized, errorResponse(err))
@@ -58,7 +62,7 @@ func (server *Server) createOrder(ctx *gin.Context) {
 		}
 
 		if id != payload.UserID {
-			ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+			ctx.JSON(http.StatusUnauthorized, errorResponse(fmt.Errorf("Ticket belongs to userID: %d, not %d \n", id, payload.UserID)))
 			return
 		}
 	}
@@ -111,6 +115,10 @@ func (server *Server) createOrder(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
+	}
+
+	for _, soldTicket := range ticketsToDeleteFromCache {
+		server.cache.Set(ctx, soldTicket, "SOLD", 60*time.Second)
 	}
 
 	ctx.JSON(http.StatusOK, orderResponse{

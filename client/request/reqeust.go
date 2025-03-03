@@ -33,6 +33,7 @@ func MakeRequest[T any](client *Client, method, endpoint string, body interface{
 	}
 
 	req, err := http.NewRequest(method, url, reqBody)
+	req.Close = true
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -49,7 +50,7 @@ func MakeRequest[T any](client *Client, method, endpoint string, body interface{
 
 	resp, err := client.HttpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("HTTP request failed: %w", err)
+		return nil, fmt.Errorf("HTTP request failed: %v", err)
 	}
 	defer resp.Body.Close()
 

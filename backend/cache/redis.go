@@ -16,12 +16,13 @@ var ClaimCacheTicket = redis.NewScript(`
 local ticket_ids = ARGV
 local quantity = tonumber(KEYS[1])
 local userID = tonumber(KEYS[2])
+local eventID = tonumber(KEYS[3])
 
 local claimed_tickets = {}
 local count = 0
 
 for i, ticket_id in ipairs(ticket_ids) do
-    local key = "ticket:" .. ticket_id
+	local key = string.format("ticket:%s-%s", eventID, ticket_id)
 
     local result = redis.call("SETNX", key, userID)
     if result == 1 then
@@ -38,7 +39,7 @@ end
 
 if count < quantity then
     for _, ticket_id in ipairs(claimed_tickets) do
-        local key = "ticket:" .. ticket_id
+		local key = string.format("ticket:%s-%s", eventID, ticket_id)
         redis.call("DEL", key)
     end
     return {}

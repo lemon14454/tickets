@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"ticket/consumer/model"
 	rbmq "ticket/consumer/mq"
+	"time"
 
 	"github.com/rabbitmq/amqp091-go"
 	"gorm.io/gorm"
@@ -19,6 +21,13 @@ var (
 )
 
 var maxRetryConut int32 = 10
+var r *rand.Rand
+
+func init() {
+	seed := time.Now().UnixNano()
+	source := rand.NewSource(seed)
+	r = rand.New(source)
+}
 
 type Handler struct {
 	db *gorm.DB
@@ -107,16 +116,9 @@ func (handler *Handler) eventCreateHandler(msgs <-chan amqp091.Delivery) {
 }
 
 func (handler *Handler) sendBackToEventQueue(d amqp091.Delivery) error {
-	delay := 3
-	waitQueue := fmt.Sprintf("%s@%d", rbmq.WaitQueue, delay)
-	waitKey := fmt.Sprintf("%s@%d", rbmq.WaitRoutingKey, delay)
 
-	err := handler.mq.CreateWaitQueue(delay, waitQueue, waitKey, TicketExchange, TicketRoutingKey)
-	if err != nil {
-		return err
-	}
-
-	var retryCount int32 = 0
+	var retryCount int32 = 1
+	// RabbitMQ expects int32 for integer values.
 	count, ok := d.Headers[rbmq.RetryCountHeader]
 	if ok {
 		retryCount = count.(int32)
@@ -125,6 +127,15 @@ func (handler *Handler) sendBackToEventQueue(d amqp091.Delivery) error {
 
 	if retryCount > maxRetryConut {
 		return fmt.Errorf("Max event create retry exceeded")
+	}
+
+	delay := (r.Int31n(retryCount) + 1) * 3
+	waitQueue := fmt.Sprintf("%s@%d", rbmq.WaitQueue, delay)
+	waitKey := fmt.Sprintf("%s@%d", rbmq.WaitRoutingKey, delay)
+
+	err := handler.mq.CreateWaitQueue(delay, waitQueue, waitKey, TicketExchange, TicketRoutingKey)
+	if err != nil {
+		return err
 	}
 
 	err = handler.mq.Publish(rbmq.WaitExchange, waitKey, d.Body, amqp091.Table{

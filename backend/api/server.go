@@ -80,13 +80,20 @@ func (server *Server) setupRouter() {
 	router.GET("/event", server.listEvent)
 	router.GET("/event/:id", server.listEventZone)
 
-	authRoutes := router.Group("/").Use(AuthMiddleware(server.tokenMaker), RateLimitMiddleware(server.cache))
+	// authRoutes := router.Group("/").Use(AuthMiddleware(server.tokenMaker), RateLimitMiddleware(server.cache))
+	authRoutes := router.Group("/").Use(AuthMiddleware(server.tokenMaker)) 
 	authRoutes.POST("/event", server.createEvent)
 	authRoutes.POST("/ticket", server.claimTicket)
 
 	authRoutes.POST("/order", server.createOrder)
 	authRoutes.GET("/order", server.listOrder)
 	authRoutes.GET("/order/:id", server.orderDetail)
+
+
+	rateLimitRoutes := router.Group("/limit").Use(AuthMiddleware(server.tokenMaker), RateLimitMiddleware(server.cache))
+
+	rateLimitRoutes.POST("/ticket", server.claimTicket)
+	rateLimitRoutes.POST("/order", server.createOrder)
 
 	server.router = router
 }

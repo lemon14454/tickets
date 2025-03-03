@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -37,14 +38,19 @@ type EventZone struct {
 }
 
 func CreateEvent(db *gorm.DB, eventID int64) error {
-	var evt Event
-	result := db.First(&evt, eventID)
+	evt := Event{ID: eventID, Status: EventStatusProcessing}
+	result := db.First(&evt)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		log.Printf("Unable to find Event: %d \n", eventID)
 		// normally it won't happend
 	}
 	if result.Error != nil {
 		return result.Error
+	}
+
+	if eventID%2 == 0 {
+		// This is for failure simulation
+		return fmt.Errorf("This is a TEST ERROR")
 	}
 
 	var eventZone []EventZone

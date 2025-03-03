@@ -7,6 +7,7 @@ import (
 
 type createOrderRequest struct {
 	ClaimedTickets []int64 `json:"claimed_tickets"`
+	EventID        int64   `json:"event_id"`
 }
 
 type orderDetail struct {
@@ -21,9 +22,14 @@ type orderResponse struct {
 	Detail []orderDetail `json:"ticekts"`
 }
 
-func (client *Client) CreateOrder(ticketsID []int64) (*orderResponse, error) {
-	res, err := MakeRequest[orderResponse](client, http.MethodPost, "order", createOrderRequest{
+func (client *Client) CreateOrder(ticketsID []int64, eventID int64, limit bool) (*orderResponse, error) {
+	url := "order"
+	if limit {
+		url = "limit/order"
+	}
+	res, err := MakeRequest[orderResponse](client, http.MethodPost, url, createOrderRequest{
 		ClaimedTickets: ticketsID,
+		EventID:        eventID,
 	}, nil)
 
 	return res, err

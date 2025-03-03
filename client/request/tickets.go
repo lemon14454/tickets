@@ -17,8 +17,13 @@ type claimTicketResponse struct {
 	ClaimExpiresAt time.Time `json:"claim_expires_at"`
 }
 
-func (client *Client) ClaimTicket(eventID, zoneID int64, row int32, quantity int) (*claimTicketResponse, error) {
-	res, err := MakeRequest[claimTicketResponse](client, http.MethodPost, "ticket", claimTicketRequest{
+func (client *Client) ClaimTicket(eventID, zoneID int64, row int32, quantity int, limit bool) (*claimTicketResponse, error) {
+	url := "ticket"
+	if limit {
+		url = "limit/ticket"
+	}
+
+	res, err := MakeRequest[claimTicketResponse](client, http.MethodPost, url, claimTicketRequest{
 		EventID:  eventID,
 		ZoneID:   zoneID,
 		Row:      row,

@@ -39,8 +39,8 @@ type listEventZoneRequest struct {
 	EventID int64 `uri:"id" binding:"required,min=1"`
 }
 
-func (client *Client) GetEventZoneByID(eventID int64) (*[]model.EventZoneDetail, error) {
+func (client *Client) GetEventZoneByID(eventID int64) ([]model.EventZoneDetail, error) {
 	url := fmt.Sprintf("event/%d", eventID)
 	eventZones, err := MakeRequest[[]model.EventZoneDetail](client, http.MethodGet, url, nil, nil)
-	return eventZones, err
+	return *eventZones, err
 }

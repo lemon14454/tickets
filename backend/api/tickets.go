@@ -59,8 +59,7 @@ func (server *Server) claimTicket(ctx *gin.Context) {
 	}
 
 	if len(availableTickets) >= req.Quantity {
-		keys := []string{strconv.Itoa(req.Quantity), strconv.FormatInt(payload.UserID, 10)}
-		// The claim will force expired if the client close the window
+		keys := []string{strconv.Itoa(req.Quantity), strconv.FormatInt(payload.UserID, 10), strconv.FormatInt(req.EventID, 10)}
 		result, err := cache.ClaimCacheTicket.Run(ctx, server.cache, keys, availableTickets...).Int64Slice()
 
 		if err != nil {
